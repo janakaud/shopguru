@@ -6,4 +6,4 @@ threadsafe: no
 
 handlers:
 - url: /receive
-  script: sms/SMSReceiver.py
+  script: launcher/AppEngineLauncher.py
