@@ -6,4 +6,4 @@ threadsafe: no
 
 handlers:
 - url: /receive
-  script: launcher/AppEngineLauncher.py
+  script: launcher/appenginelauncher.py

@@ -4,7 +4,7 @@ Created on Aug 9, 2014
 @author: janaka
 '''
 
-from sms.SMSReceiver import SMSReceiver
+from sms.smsreceiver import SMSReceiver
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import webapp
 

@@ -17,8 +17,8 @@ It defines classes_and_methods
 @deffield    updated: Updated
 '''
 
-import ClientHandler
+from clienthandler import ClientHandler
 
-def newClient(message):
+def new_client(message):
     handler = ClientHandler(message)
     return handler
