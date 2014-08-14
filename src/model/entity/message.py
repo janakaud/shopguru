@@ -44,7 +44,7 @@ class IncomingSMS(BaseSMS):
         return 'Incoming' + BaseSMS.__str__(self)
     
     def persist(self):
-        entity_manager.persist_incoming_sms(self, self)
+        entity_manager.persist_incoming_sms(self)
 
 
 class OutgoingSMS(BaseSMS):

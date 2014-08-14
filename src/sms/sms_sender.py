@@ -1,6 +1,4 @@
 '''
-Created on Aug 5, 2014
-
 @author: janaka
 
 This module delivers generated SMS messages to intended users
@@ -21,6 +19,7 @@ def send(message):
         'applicationId': sms_config.APP_ID
     }
     
+    # fabricate and send API request
     form_data = json.dumps(res)
     result = urlfetch.fetch(url=sms_config.SMS_TARGET,
         payload=form_data,
@@ -31,6 +30,7 @@ def send(message):
         }
                             )
     
+    # acknowledge result
     if result.status_code == 200:
         logging.info('Message delivered successfully')
     else:

@@ -1,6 +1,4 @@
 '''
-Created on Aug 9, 2014
-
 @author: janaka
 '''
 from abc import ABCMeta, abstractmethod
