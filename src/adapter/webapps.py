@@ -6,6 +6,7 @@ Created on Aug 9, 2014
 
 from google.appengine.ext.webapp import RequestHandler
 
+
 class WebappAdapter(RequestHandler):
     
     def __init__(self, *args):

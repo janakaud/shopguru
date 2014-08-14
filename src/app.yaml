@@ -6,4 +6,8 @@ threadsafe: no
 
 handlers:
 - url: /receive
-  script: launcher/appenginelauncher.py
+  script: launcher/appengine_launcher.py
+
+libraries:
+- name: MySQLdb
+  version: latest

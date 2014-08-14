@@ -8,20 +8,21 @@ via IdeaPro SMS API.
 '''
 
 from google.appengine.api import urlfetch
-from config import settings
+from config import sms_config
 import logging
 import json
+
 
 def send(message):
     res = {
         'message': message.content,
         'destinationAddresses': message.phone,
-        'password': settings.APP_PASSWORD,
-        'applicationId': settings.APP_ID
+        'password': sms_config.APP_PASSWORD,
+        'applicationId': sms_config.APP_ID
     }
     
     form_data = json.dumps(res)
-    result = urlfetch.fetch(url=settings.SMS_TARGET,
+    result = urlfetch.fetch(url=sms_config.SMS_TARGET,
         payload=form_data,
         method=urlfetch.POST,
         headers = {

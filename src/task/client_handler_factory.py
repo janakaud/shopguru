@@ -1,23 +1,14 @@
-#!/usr/local/bin/python2.7
-# encoding: utf-8
 '''
-test -- shortdesc
+Created on Aug 5, 2014
 
-test is a description
+@author: janaka
 
-It defines classes_and_methods
-
-@author:     user_name
-
-@copyright:  2014 organization_name. All rights reserved.
-
-@license:    license
-
-@contact:    user_email
-@deffield    updated: Updated
+This module is a factory for client handlers which respond to
+SMS queries/commands of users.
 '''
 
-from clienthandler import ClientHandler
+from client_handler import ClientHandler
+
 
 def new_client(message):
     handler = ClientHandler(message)
