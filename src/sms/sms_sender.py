@@ -12,6 +12,7 @@ import json
 
 
 def send(message):
+    """ module for sending out SMS using the IdeaMart API """
     res = {
         'message': message.content,
         'destinationAddresses': message.phone,

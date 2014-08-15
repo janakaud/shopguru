@@ -10,7 +10,7 @@ from base_entity import BaseEntity
 
 class Subscription(BaseEntity):
     '''
-    This class 
+    This class represents an association between a customer and a shop. 
     '''
 
     def __init__(self, params):

@@ -16,4 +16,5 @@ class BaseEntity:
 
     @abstractmethod
     def persist(self):
+        """ persists this entity in the storage """
         pass        

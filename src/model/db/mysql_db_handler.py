@@ -1,6 +1,10 @@
 '''
 @author: janaka
+
+This module handles MySQL-specific DBMS operations,
+including connection management and execution of queries and updates.
 '''
+
 from config import db_config
 import MySQLdb
 import logging

@@ -13,6 +13,7 @@ import json
 class SMSReceiver(WebappAdapter):
 
     def get(self):
+        """ GET request handler -- simply blocks the request """
         # deny access via GET
         logging.info(self.request)
         self.response.headers['Content-Type'] = 'text/plain'
@@ -20,6 +21,7 @@ class SMSReceiver(WebappAdapter):
         self.response.out.write('Access Denied')
 
     def post(self):
+        """ POST request handler for incoming SMS via IdeaMart API """
         # get received time and message content
         nowTime = util.current_time()
         received_content = self.request.body

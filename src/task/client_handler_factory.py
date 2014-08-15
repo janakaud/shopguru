@@ -1,6 +1,4 @@
 '''
-Created on Aug 5, 2014
-
 @author: janaka
 
 This module is a factory for client handlers which respond to
@@ -11,5 +9,6 @@ from client_handler import ClientHandler
 
 
 def new_client(message):
+    """ creates and returns a new ClientHandler instance """
     handler = ClientHandler(message)
     return handler

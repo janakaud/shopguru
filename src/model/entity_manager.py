@@ -81,3 +81,47 @@ def retrieve_customer(phone):
                         persisted=True)
     else:
         return None
+    
+
+def persist_shop(shop):
+    """ persists Shop entity """
+    if shop.persisted == False:  # not in storage; create new record
+        get_manager().insert_record('shop',
+                                    ['name', 'phone', 'address', 'category', 
+                                     'reg_time', 'latitude', 'longitude'],
+                                    [shop.name, shop.phone, shop.address, 
+                                     shop.category, shop.reg_time,
+                                     shop.location.latitude,
+                                     shop.location.longitude])
+    else:   # already in storage; update possible fieles of existing record
+        get_manager().update_record('shop',
+                                    ['phone'], [shop.phone],
+                                    ['latitude', 'longitude'],
+                                    [shop.location.latitude,
+                                     shop.location.longitude])
+
+
+def retrieve_shop(phone):
+    """ retrieves any Shops stored under given phone """
+    # deferred import to circumvent circular dependency
+    from model.entity.location import Location
+    from model.entity.shop import Shop
+    
+    # return first record found, None otherwise
+    result = get_manager().search_record('shop',
+                                         ['name', 'address', 'category',
+                                          'reg_time',
+                                          'latitude', 'longitude'],
+                                         ['phone'], [phone])
+    if result.rowcount > 0:
+        # create Shop object from first retrieval 
+        data = result.fetchone()
+        return Shop(phone=phone,
+                    name=data[0],
+                    address=data[1],
+                    category=data[2],
+                    reg_time=data[3],
+                    location=Location(data[4], data[5]),
+                    persisted=True)
+    else:
+        return None

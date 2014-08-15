@@ -16,6 +16,7 @@ class MySQLDataManager(BaseDataManager):
 
     @classmethod
     def get_instance(cls):
+        # singleton pattern
         if cls.instance is None:
             cls.instance = MySQLDataManager()
         return cls.instance
