@@ -6,9 +6,9 @@ Test collection for message parser module
 
 import unittest
 from src.sms import message_parser
+from message_parser import RegistrationException, MissingNameException
 from src.model.entity.message import IncomingSMS
 from src.config import util
-from src.exception.exception import RegistrationException, MissingNameException
 
 
 class MessageParserTest(unittest.TestCase):

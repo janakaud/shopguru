@@ -15,6 +15,7 @@
 <path>/${PROJECT_DIR_NAME}/src/model</path>
 <path>/${PROJECT_DIR_NAME}/src/sms</path>
 <path>/${PROJECT_DIR_NAME}/src/task</path>
+<path>/${PROJECT_DIR_NAME}/src/exception</path>
 </pydev_pathproperty>
 <pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
 <path>${GOOGLE_APP_ENGINE}</path>

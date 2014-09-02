@@ -7,6 +7,7 @@ from threading import Thread
 from sms import sms_sender, message_parser
 from task import query
 from config import util 
+from lbs import lbs_handler
 from model.entity.customer import Customer
 from model.entity.shop import Shop
 from model.entity.location import Location
@@ -56,6 +57,8 @@ class ClientHandler(Thread):
         # check for customer in database; create only if absent
         name = self.query.params['name']
         phone = self.query.params['phone']
+        address = self.query.params['address']
+        
         cust = Customer.retrieve(phone)
         
         reply = None    # reply message
@@ -65,10 +68,17 @@ class ClientHandler(Thread):
             'ShopGuru as a customer'
             ' on ' + util.extract_date(str(cust.reg_time)))
         else:   # register, and confirm
+            location = None
+            # try to get customer location
+            if address is not None and len(address) > 0:
+                location = Location(5.23, 89.77)
+            else:
+                location = lbs_handler.request(phone)
+            
             new_cust = Customer(name=name,
                                 phone=phone,
                                 reg_time=self.query.params['reg_time'],
-                                location=Location(5.23, 89.77))
+                                location=location)
             new_cust.persist()
             reply = 'Welcome to ShopGuru, ' + name + '!'
         
@@ -79,6 +89,8 @@ class ClientHandler(Thread):
         # check for customer in database; create only if absent
         name = self.query.params['name']
         phone = self.query.params['phone']
+        address = self.query.params['address']
+        
         shop = Shop.retrieve(self.query.params['phone'])
         
         reply = None    # reply message
@@ -88,12 +100,19 @@ class ClientHandler(Thread):
             'ShopGuru as a shop'
             ' on ' + util.extract_date(str(shop.reg_time)))
         else:   # register, and confirm
+            location = None
+            # try to get customer location
+            if address is not None and len(address) > 0:
+                location = Location(5.23, 89.77)
+            else:
+                location = lbs_handler.request(phone)
+            
             new_shop = Shop(name=name,
                             phone=phone,
                             address=self.query.params['address'],
                             category=self.query.params['category'],
                             reg_time=self.query.params['reg_time'],
-                            location=Location(5.23, 89.77))
+                            location=location)
             new_shop.persist()
             reply = 'Welcome to ShopGuru, ' + name + '!'
         
