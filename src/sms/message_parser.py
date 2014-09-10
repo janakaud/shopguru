@@ -12,6 +12,10 @@ from task.query import Query
 from exception.exception import RegistrationException, QueryException
 from exception.exception import MissingNameException, MissingShopCategoryException
 
+# messaging formats - for reference
+MSG_REG_SHOP = 'REG SHOP N:<shop name> A:<shop address> C:<shop category>'
+MSG_REG_CUST = 'REG CUST N:<name> A:<address>'
+
 
 def parse(message):
     """ parser's control method """
@@ -25,7 +29,25 @@ def parse(message):
     try:
         # registration
         if tokens[0] == 'reg':
-            msg_query = parse_reg(message, tokens)
+            msg_query = parse_reg(message, tokens[1])
+        # category-based shop find - customer
+        elif tokens[0] == 'find':
+            msg_query = parse_find(message, tokens[1])
+        # subscribed shop status - customer
+        elif tokens[0] == 'status':
+            msg_query = parse_check_status(message, tokens[1])
+        # subscribing under given shop name - customer
+        elif tokens[0] == 'track':
+            msg_query = parse_track(message, tokens[1])
+        # unsubscribing under given shop name - customer
+        elif tokens[0] == 'untrack':
+            msg_query = parse_untrack(message, tokens[1])
+        # updating shop status - shop
+        elif tokens[0] == 'update':
+            msg_query = parse_update_status(message, tokens[1])
+        # unregistration
+        elif tokens[0] == 'unreg':
+            msg_query = parse_unreg(message, tokens[1])
         else:
             raise QueryException()
     except IndexError:
@@ -36,15 +58,15 @@ def parse(message):
 
 def parse_reg(message, tokens):
     """ registration parser control method """
-    tokens = re.split('\s', tokens[1].strip(), 1)
+    tokens = re.split('\s', tokens.strip(), 1)
     tokens[0] = tokens[0].lower()
     
     # customer registration
     if(tokens[0] == 'cust'):
-        return parse_reg_cust(message, tokens)
-    # customer registration
+        return parse_reg_cust(message, data)
+    # shop registration
     elif(tokens[0] == 'shop'):
-        return parse_reg_shop(message, tokens)
+        return parse_reg_shop(message, data)
     # undefined query
     else:
         raise QueryException()
@@ -54,7 +76,7 @@ def parse_reg_cust(message, tokens):
     """ customer registration parser """
     # user name
     try:
-        token = re.search('[Nn]:.*', tokens[1]).group(0)
+        token = re.search('[Nn]:.*', tokens).group(0)
         # eliminate other sections
         pos = re.search('[Aa]:', token)
         if pos is not None:
@@ -65,7 +87,7 @@ def parse_reg_cust(message, tokens):
 
     # address
     try:
-        token = re.search('[Aa]:.*', tokens[1]).group(0)
+        token = re.search('[Aa]:.*', tokens).group(0)
         # eliminate other sections
         pos = re.search('[Nn]:', token)
         if pos is not None:
@@ -91,7 +113,7 @@ def parse_reg_shop(message, tokens):
     """ shop registration parser """
     # shop name
     try:
-        token = re.search('[Nn]:.*', tokens[1]).group(0)
+        token = re.search('[Nn]:.*', tokens).group(0)
         # eliminate other sections
         pos = re.search('[AaCc]:', token)
         if pos is not None:
@@ -103,7 +125,7 @@ def parse_reg_shop(message, tokens):
     # address; if not provided in registration SMS,
     # keep address blank for next stage (LBS+geocode based location)
     try:
-        token = re.search('[Aa]:.*', tokens[1]).group(0)
+        token = re.search('[Aa]:.*', tokens).group(0)
         # eliminate other sections
         pos = re.search('[NnCc]:', token)
         if pos is not None:
@@ -114,7 +136,7 @@ def parse_reg_shop(message, tokens):
 
     # shop type
     try:
-        token = re.search('[Cc]:.*', tokens[1]).group(0)
+        token = re.search('[Cc]:.*', tokens).group(0)
         # eliminate other sections
         pos = re.search('[AaNn]:', token)
         if pos is not None:
@@ -135,3 +157,97 @@ def parse_reg_shop(message, tokens):
                       )
     else:
         return None
+    
+
+def parse_find(message, category):
+    """ shop finder parser """
+    # shop finder (based on shop category)
+    if category != None:
+        return Query(query.FIND_SHOP,
+                      dict(
+                           category = category,
+                           phone = message.phone
+                           )
+                      )
+    else:
+        return None
+    
+    
+def parse_check_status(message, shop):
+    """ shop status check parser """
+    # shop status check (based on shop name)
+    if shop != None:
+        return Query(query.SHOP_STATUS,
+                      dict(
+                           shop = shop,
+                           phone = message.phone
+                           )
+                      )
+    else:
+        return None
+
+
+def parse_track(message, shop):
+    """ shop track parser """
+    # shop track ('follow') (based on shop name)
+    if shop != None:
+        return Query(query.TRACK_SHOP,
+                      dict(
+                           shop = shop,
+                           phone = message.phone
+                           )
+                      )
+    else:
+        return None
+
+
+def parse_untrack(message, shop):
+    """ shop track stop parser """
+    # shop untrack ('unfollow') (based on shop name)
+    if shop != None:
+        return Query(query.UNTRACK_SHOP,
+                      dict(
+                           shop = shop,
+                           phone = message.phone
+                           )
+                      )
+    else:
+        return None
+
+
+def parse_update_status(message, status):
+    """ shop status update parser """
+    # shop track ('follow') (based on shop name)
+    if status != None:
+        return Query(query.UPDATE_STATUS,
+                      dict(
+                           status = status,
+                           phone = message.phone
+                           )
+                      )
+    else:
+        return None
+
+
+def parse_unreg(message, tokens):
+    """ unregistration parser """
+    tokens = re.split('\s', tokens.strip(), 1)
+    user_type = tokens[0].lower()
+    
+    # customer unregistration
+    if(user_type == 'cust'):
+        return Query(query.CUST_UNREGISTER,
+                      dict(
+                           phone = message.phone
+                           )
+                      )
+    # shop unregistration
+    elif(user_type == 'shop'):
+        return Query(query.SHOP_UNREGISTER,
+                      dict(
+                           phone = message.phone
+                           )
+                      )
+    # undefined query
+    else:
+        raise QueryException()

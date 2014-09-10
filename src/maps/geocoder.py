@@ -1,20 +1,21 @@
 '''
 @author: janaka
 
-This module sends an LBS request for a given phone number via IdeaPro LBS API,
-blocks till the response is received and returns the response.
+This module sends a Google Geocoding API request for a given address,
+blocks till the response is received and returns a Location object.
 '''
 
 from google.appengine.api import urlfetch
-from model.entity.location import Location
-from config import app_config, util
+from config import app_config
 import logging
 import json
+from model.entity.location import Location
 
 
-def request(phone):
-    """ module for sending out LBS requests using the IdeaMart API """
-    res = {
+def geocode(address):
+    """ module for converting addresses to coordinates
+        using Google Geocoding API """
+    '''    res = {
         'applicationId': app_config.APP_ID,
         'password': app_config.APP_PASSWORD,
         'subscriberId': phone,
@@ -38,16 +39,8 @@ def request(phone):
     # acknowledge result
     if result.status_code == 200:
         logging.info('LBS request sent successfully!')
-
-        # get received time and message content
-        received_content = result.content
-        decoded_json = json.loads(received_content)
-
-        latitude = str(decoded_json['latitude'])
-        longitude = str(decoded_json['longitude'])
-        location = Location(latitude, longitude)
-        
-        logging.info('LBS response: location = (' + latitude + ',' + longitude + ')')
-        return location
     else:
         logging.info('LBS request failed with error ' + result.status_code)
+    '''    
+    # process and return Location object
+    return Location(5.23, 89.77)

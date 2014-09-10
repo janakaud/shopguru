@@ -42,22 +42,22 @@ def persist_outgoing_sms(message):
         #raise Error('Message already persisted')
 
 
-def persist_customer(customer):
+def persist_customer(a_cust):
     """ persists Customer entity """
-    if customer.persisted == False:  # not in storage; create new record
+    if a_cust.persisted == False:  # not in storage; create new record
         get_manager().insert_record('customer',
                                     ['name', 'phone', 'reg_time',
                                      'latitude', 'longitude'],
-                                    [customer.name, customer.phone,
-                                     customer.reg_time,
-                                     customer.location.latitude,
-                                     customer.location.longitude])
+                                    [a_cust.name, a_cust.phone,
+                                     a_cust.reg_time,
+                                     a_cust.location.latitude,
+                                     a_cust.location.longitude])
     else:   # already in storage; update possible fieles of existing record
         get_manager().update_record('customer',
-                                    ['phone'], [customer.phone],
+                                    ['phone'], [a_cust.phone],
                                     ['latitude', 'longitude'],
-                                    [customer.location.latitude,
-                                     customer.location.longitude])
+                                    [a_cust.location.latitude,
+                                     a_cust.location.longitude])
 
 
 def retrieve_customer(phone):
@@ -71,9 +71,9 @@ def retrieve_customer(phone):
                                          ['name', 'reg_time',
                                           'latitude', 'longitude'],
                                          ['phone'], [phone])
-    if result.rowcount > 0:
+    if len(result) > 0:
         # create Customer object from first retrieval 
-        data = result.fetchone()
+        data = result[0]
         return Customer(phone=phone,
                         name=data[0],
                         reg_time=data[1],
@@ -81,24 +81,64 @@ def retrieve_customer(phone):
                         persisted=True)
     else:
         return None
+
+
+def search_customer(filter_fields, filter_values):
+    """ retrieves any Customers matching given criteria """
+    # deferred import to circumvent circular dependency
+    from model.entity.location import Location
+    from model.entity.customer import Customer
+    
+    # return all records found, None otherwise
+    result = get_manager().search_record('customer', 
+                                         ['phone', 'name', 'reg_time',
+                                          'latitude', 'longitude'],
+                                         filter_fields, filter_values)
+    if len(result) > 0:
+        # create list of Customer objects from results
+        output = []
+        for data in result: 
+            output.append(Customer(phone=data[0],
+                                   name=data[1],
+                                   reg_time=data[2],
+                                   location=Location(data[3], data[4]),
+                                   persisted=True))
+        return output
+    else:
+        return None
     
 
-def persist_shop(shop):
+def persist_shop(a_shop):
     """ persists Shop entity """
-    if shop.persisted == False:  # not in storage; create new record
+    # deferred import to circumvent circular dependency
+    from entity import shop
+
+    if a_shop.persisted == False:  # not in storage; create new record
         get_manager().insert_record('shop',
                                     ['name', 'phone', 'address', 'category', 
-                                     'reg_time', 'latitude', 'longitude'],
-                                    [shop.name, shop.phone, shop.address, 
-                                     shop.category, shop.reg_time,
-                                     shop.location.latitude,
-                                     shop.location.longitude])
-    else:   # already in storage; update possible fieles of existing record
-        get_manager().update_record('shop',
-                                    ['phone'], [shop.phone],
-                                    ['latitude', 'longitude'],
-                                    [shop.location.latitude,
-                                     shop.location.longitude])
+                                     'reg_time', 'latitude', 'longitude',
+                                     'status'],
+                                    [a_shop.name, a_shop.phone, a_shop.address, 
+                                     a_shop.category, a_shop.reg_time,
+                                     a_shop.location.latitude,
+                                     a_shop.location.longitude,
+                                     a_shop.status])
+    else:   # already in storage; update fields of existing record
+        if a_shop.changes == shop.DETAIL_CHANGED:  # update details
+            get_manager().update_record('shop',
+                                        ['phone'], [a_shop.phone],
+                                        ['name', 'category'],
+                                        [a_shop.name, a_shop.category])
+        elif a_shop.changes == shop.LOCATION_CHANGED:  # update location
+            get_manager().update_record('shop',
+                                        ['phone'], [a_shop.phone],
+                                        ['latitude', 'longitude'],
+                                        [a_shop.location.latitude,
+                                         a_shop.location.longitude])
+        elif a_shop.changes == shop.STATUS_CHANGED:    # update status
+            get_manager().update_record('shop',
+                                        ['phone'], [a_shop.phone],
+                                        ['status'], [a_shop.status])
 
 
 def retrieve_shop(phone):
@@ -111,17 +151,50 @@ def retrieve_shop(phone):
     result = get_manager().search_record('shop',
                                          ['name', 'address', 'category',
                                           'reg_time',
-                                          'latitude', 'longitude'],
+                                          'latitude', 'longitude', 'status'],
                                          ['phone'], [phone])
-    if result.rowcount > 0:
+    if len(result) > 0:
         # create Shop object from first retrieval 
-        data = result.fetchone()
+        data = result[0]
         return Shop(phone=phone,
                     name=data[0],
                     address=data[1],
                     category=data[2],
                     reg_time=data[3],
                     location=Location(data[4], data[5]),
+                    status=data[6],
                     persisted=True)
+    else:
+        return None
+
+
+def search_shop(filter_fields, filter_values,
+                order_fields=None, order_values=None, search_with_like=False):
+    """ retrieves any Shops matching given criteria """
+    # deferred import to circumvent circular dependency
+    from model.entity.location import Location
+    from model.entity.shop import Shop
+    
+    # return all records found, None otherwise
+    result = get_manager().search_record('shop', 
+                                         ['phone', 'name', 'address',
+                                          'category', 'reg_time',
+                                          'latitude', 'longitude', 'status'],
+                                         filter_fields, filter_values,
+                                         order_fields, order_values,
+                                         search_with_like)
+    if len(result) > 0:
+        # create list of Shop objects from results
+        output = []
+        for data in result: 
+            output.append(Shop(phone=data[0],
+                               name=data[1],
+                               address=data[2],
+                               category=data[3],
+                               reg_time=data[4],
+                               location=Location(data[5], data[6]),
+                               status=data[7],
+                               persisted=True))
+        return output
     else:
         return None
