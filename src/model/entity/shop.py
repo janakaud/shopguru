@@ -4,11 +4,18 @@
 
 from model import entity_manager
 from base_entity import BaseEntity
+from config import util
+from sms import sms_sender
+from model.entity.message import OutgoingSMS
+import logging
 
 # possible types of changes the entity may undergo
 DETAIL_CHANGED = 1
 LOCATION_CHANGED = 2
 STATUS_CHANGED = 3
+
+MSG_REMIND_STATUS_UPDATE = ('Hello %s, your shop status has expired. '
+                            'Please renew it. Thank you!')
 
 
 class Shop(BaseEntity):
@@ -17,7 +24,8 @@ class Shop(BaseEntity):
     '''
 
     def __init__(self, name, phone, address, category, reg_time, location,
-                 status='', persisted=False, changes=None):
+                 status='', last_update='', lifetime='',
+                 persisted=False, changes=None):
         """ initialize a new Shop """
         self.phone = phone
         self.name = name
@@ -26,6 +34,8 @@ class Shop(BaseEntity):
         self.category = category
         self.location = location
         self.status = status
+        self.last_update = last_update  # timestamp of last status update
+        self.lifetime = lifetime    # lifetime of status update
         self.persisted = persisted  # indicates if already written to storage
         self.changes = changes      # indicates changes to be saved
     
@@ -34,9 +44,34 @@ class Shop(BaseEntity):
         entity_manager.persist_shop(self)
     
     @classmethod
+    def check_status_expiry(cls, a_shop):
+        """ check if shop status expired, and notify the owner """
+        try:
+            if (a_shop.last_update != None
+                and util.get_delay(a_shop.last_update) >= a_shop.lifetime):
+                a_shop.status = ''
+                a_shop.changes = STATUS_CHANGED
+                cls.persist(a_shop)
+                
+                # notify the shop owner to update his status
+                reply_sms = OutgoingSMS(a_shop.phone, util.current_time(), 
+                                        (MSG_REMIND_STATUS_UPDATE %
+                                         a_shop.name))
+                sms_sender.send(reply_sms)
+                reply_sms.persist()
+        except BaseException as e:
+            logging.error(e)
+        
+    @classmethod
     def retrieve(cls, phone):
         """ retrieve Shop (if any) with given phone number """
-        return entity_manager.retrieve_shop(phone)
+        result = entity_manager.retrieve_shop(phone)
+        
+        # check if shop status is expired; if so, remove it
+        if result != None:
+            cls.check_status_expiry(result)
+        
+        return result
     
     @classmethod
     def exists(cls, phone):
@@ -47,8 +82,46 @@ class Shop(BaseEntity):
     def search_by_category(cls, location, category):
         """ retrieve the best matching shops of given category 
             around a given location """
-        return entity_manager.search_shop(['category'], [category],
-                                          [('(POW(shop.latitude - %s, 2) + '
-                                           'POW(shop.longitude - %s, 2))')],
+        data = entity_manager.search_shop(['category'], ['%' + category + '%'],
+                                          [('(POW(shop.latitude-%s, 2) + '
+                                           'POW(shop.longitude-%s, 2))')],
                                           [location.latitude,
                                            location.longitude], True)
+        
+        # check if shop statuses is expired; if so, remove them
+        if data != None:
+            for a_shop in data: 
+                cls.check_status_expiry(a_shop)
+        
+        return data
+        
+    @classmethod
+    def search_by_name(cls, name, address=None, location=None):
+        """ retrieve the best matching shops of given name 
+            around a given location or at a given address """
+        data = None
+        
+        if address != None:
+            # search by address
+            data = entity_manager.search_shop(['name', 'address'],
+                                              ['%' + name + '%',
+                                               '%' + address + '%'],
+                                              search_with_like=True)
+        elif location != None:
+            # search by address
+            data = entity_manager.search_shop(['name'], ['%' + name + '%'],
+                                              [('(POW(shop.latitude-%s, 2) + '
+                                               'POW(shop.longitude-%s, 2))')],
+                                              [location.latitude,
+                                               location.longitude], True)
+        else:
+            # cannot filter by location; return result by name only
+            data = entity_manager.search_shop(['name'], ['%' + name + '%'],
+                                              search_with_like=True)
+        
+        # check if shop statuses is expired; if so, remove them
+        if data != None:
+            for a_shop in data: 
+                cls.check_status_expiry(a_shop)
+        
+        return data

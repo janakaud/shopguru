@@ -42,6 +42,8 @@ def persist_outgoing_sms(message):
         #raise Error('Message already persisted')
 
 
+""" Customer entity handlers """
+
 def persist_customer(a_cust):
     """ persists Customer entity """
     if a_cust.persisted == False:  # not in storage; create new record
@@ -108,6 +110,8 @@ def search_customer(filter_fields, filter_values):
         return None
     
 
+""" Shop entity handlers """
+
 def persist_shop(a_shop):
     """ persists Shop entity """
     # deferred import to circumvent circular dependency
@@ -117,12 +121,16 @@ def persist_shop(a_shop):
         get_manager().insert_record('shop',
                                     ['name', 'phone', 'address', 'category', 
                                      'reg_time', 'latitude', 'longitude',
-                                     'status'],
+                                     'status', 'last_update', 'lifetime'],
                                     [a_shop.name, a_shop.phone, a_shop.address, 
                                      a_shop.category, a_shop.reg_time,
                                      a_shop.location.latitude,
                                      a_shop.location.longitude,
-                                     a_shop.status])
+                                     a_shop.status, a_shop.last_update,
+                                     a_shop.lifetime])
+        # set persisted flag
+        a_shop.persisted = True
+    
     else:   # already in storage; update fields of existing record
         if a_shop.changes == shop.DETAIL_CHANGED:  # update details
             get_manager().update_record('shop',
@@ -138,7 +146,10 @@ def persist_shop(a_shop):
         elif a_shop.changes == shop.STATUS_CHANGED:    # update status
             get_manager().update_record('shop',
                                         ['phone'], [a_shop.phone],
-                                        ['status'], [a_shop.status])
+                                        ['status', 'last_update'],
+                                        [a_shop.status, a_shop.last_update])
+        # clear modified flag
+        a_shop.changes = None
 
 
 def retrieve_shop(phone):
@@ -150,8 +161,8 @@ def retrieve_shop(phone):
     # return first record found, None otherwise
     result = get_manager().search_record('shop',
                                          ['name', 'address', 'category',
-                                          'reg_time',
-                                          'latitude', 'longitude', 'status'],
+                                          'reg_time', 'latitude', 'longitude',
+                                          'status', 'last_update', 'lifetime'],
                                          ['phone'], [phone])
     if len(result) > 0:
         # create Shop object from first retrieval 
@@ -163,6 +174,8 @@ def retrieve_shop(phone):
                     reg_time=data[3],
                     location=Location(data[4], data[5]),
                     status=data[6],
+                    last_update=data[7],
+                    lifetime=data[8],
                     persisted=True)
     else:
         return None
@@ -179,7 +192,8 @@ def search_shop(filter_fields, filter_values,
     result = get_manager().search_record('shop', 
                                          ['phone', 'name', 'address',
                                           'category', 'reg_time',
-                                          'latitude', 'longitude', 'status'],
+                                          'latitude', 'longitude', 'status',
+                                          'last_update', 'lifetime'],
                                          filter_fields, filter_values,
                                          order_fields, order_values,
                                          search_with_like)
@@ -194,7 +208,74 @@ def search_shop(filter_fields, filter_values,
                                reg_time=data[4],
                                location=Location(data[5], data[6]),
                                status=data[7],
+                               last_update=data[8],
+                               lifetime=data[9],
                                persisted=True))
+        return output
+    else:
+        return None
+
+
+""" Subscription entity handlers """
+
+def persist_subscription(a_subs):
+    """ persists Subscription entity """
+    if a_subs.persisted == False:  # not in storage; create new record
+        get_manager().insert_record('subscription',
+                                    ['cust_phone', 'shop_phone', 'start_time',
+                                     'last_query'],
+                                    [a_subs.cust_phone, a_subs.shop_phone,
+                                     a_subs.start_time, a_subs.last_query])
+    else:   # already in storage; update possible fieles of existing record
+        get_manager().update_record('subscription',
+                                    ['cust_phone', 'shop_phone'], 
+                                    [a_subs.cust_phone, a_subs.shop_phone],
+                                    ['last_query'], [a_subs.last_query])
+
+
+def retrieve_subscription(cust_phone, shop_phone):
+    """ retrieves any Subscriptions with given phone numbers """
+    # deferred import to circumvent circular dependency
+    from model.entity.location import Location
+    from model.entity.subscription import Subscription
+    
+    # return first record found, None otherwise
+    result = get_manager().search_record('subscription',
+                                         ['start_time', 'last_query'],
+                                         ['cust_phone', 'shop_phone'], 
+                                         [cust_phone, shop_phone])
+    if len(result) > 0:
+        # create Subscription object from first retrieval 
+        data = result[0]
+        return Subscription(cust_phone=cust_phone,
+                            shop_phone=shop_phone,
+                            start_time=data[0],
+                            last_query=data[1],
+                            persisted=True)
+    else:
+        return None
+
+
+def search_subscription(filter_fields, filter_values):
+    """ retrieves any Subscriptions matching given criteria """
+    # deferred import to circumvent circular dependency
+    from model.entity.location import Location
+    from model.entity.subscription import Subscription
+    
+    # return all records found, None otherwise
+    result = get_manager().search_record('subscription', 
+                                         ['cust_phone', 'shop_phone', 'start_time',
+                                          'last_query'],
+                                         filter_fields, filter_values)
+    if len(result) > 0:
+        # create list of Subscription objects from results
+        output = []
+        for data in result: 
+            output.append(Subscription(cust_phone=data[0],
+                                       shop_phone=data[1],
+                                       start_time=data[2],
+                                       last_query=data[3],
+                                       persisted=True))
         return output
     else:
         return None

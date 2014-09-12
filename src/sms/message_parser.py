@@ -6,15 +6,13 @@ a use case of the application.
 '''
 
 import re
-import logging
 from task import query
 from task.query import Query
-from exception.exception import RegistrationException, QueryException
-from exception.exception import MissingNameException, MissingShopCategoryException
+from exception.exception import *
 
 # messaging formats - for reference
-MSG_REG_SHOP = 'REG SHOP N:<shop name> A:<shop address> C:<shop category>'
-MSG_REG_CUST = 'REG CUST N:<name> A:<address>'
+MSG_REG_SHOP = 'REG SHOP N:shop-name A:shop-address C:shop-category'
+MSG_REG_CUST = 'REG CUST N:name A:address'
 
 
 def parse(message):
@@ -51,7 +49,7 @@ def parse(message):
         else:
             raise QueryException()
     except IndexError:
-        raise RegistrationException()
+        raise QueryException()
     
     return msg_query
 
@@ -63,13 +61,13 @@ def parse_reg(message, tokens):
     
     # customer registration
     if(tokens[0] == 'cust'):
-        return parse_reg_cust(message, data)
+        return parse_reg_cust(message, tokens[1])
     # shop registration
     elif(tokens[0] == 'shop'):
-        return parse_reg_shop(message, data)
+        return parse_reg_shop(message, tokens[1])
     # undefined query
     else:
-        raise QueryException()
+        raise RegistrationException()
 
 
 def parse_reg_cust(message, tokens):
@@ -79,18 +77,18 @@ def parse_reg_cust(message, tokens):
         token = re.search('[Nn]:.*', tokens).group(0)
         # eliminate other sections
         pos = re.search('[Aa]:', token)
-        if pos is not None:
+        if pos != None:
             token = token[:pos.start()]
         name = str(token[2:len(token)]).strip()
     except AttributeError:
-        raise MissingNameException()
+        raise MissingCustomerNameException()
 
     # address
     try:
         token = re.search('[Aa]:.*', tokens).group(0)
         # eliminate other sections
         pos = re.search('[Nn]:', token)
-        if pos is not None:
+        if pos != None:
             token = token[:pos.start()]
         address = str(token[2:len(token)]).strip()
     except AttributeError:
@@ -116,11 +114,11 @@ def parse_reg_shop(message, tokens):
         token = re.search('[Nn]:.*', tokens).group(0)
         # eliminate other sections
         pos = re.search('[AaCc]:', token)
-        if pos is not None:
+        if pos != None:
             token = token[:pos.start()]
         name = str(token[2:len(token)]).strip()
     except AttributeError:
-        raise MissingNameException()
+        raise MissingShopNameException()
 
     # address; if not provided in registration SMS,
     # keep address blank for next stage (LBS+geocode based location)
@@ -128,7 +126,7 @@ def parse_reg_shop(message, tokens):
         token = re.search('[Aa]:.*', tokens).group(0)
         # eliminate other sections
         pos = re.search('[NnCc]:', token)
-        if pos is not None:
+        if pos != None:
             token = token[:pos.start()]
         address = str(token[2:len(token)]).strip()
     except AttributeError:
@@ -139,7 +137,7 @@ def parse_reg_shop(message, tokens):
         token = re.search('[Cc]:.*', tokens).group(0)
         # eliminate other sections
         pos = re.search('[AaNn]:', token)
-        if pos is not None:
+        if pos != None:
             token = token[:pos.start()]
         category = str(token[2:len(token)]).strip()
     except AttributeError:
@@ -187,13 +185,38 @@ def parse_check_status(message, shop):
         return None
 
 
-def parse_track(message, shop):
+def parse_track(message, tokens):
     """ shop track parser """
-    # shop track ('follow') (based on shop name)
-    if shop != None:
+
+    # shop name
+    try:
+        token = re.search('[Nn]:.*', tokens).group(0)
+        # eliminate other sections
+        pos = re.search('[AaCc]:', token)
+        if pos != None:
+            token = token[:pos.start()]
+        name = str(token[2:len(token)]).strip()
+    except AttributeError:
+        name = tokens.strip()
+
+    # address; if not provided in subscription SMS,
+    # keep address blank for next stage (LBS+geocode based location)
+    try:
+        token = re.search('[Aa]:.*', tokens).group(0)
+        # eliminate other sections
+        pos = re.search('[NnCc]:', token)
+        if pos != None:
+            token = token[:pos.start()]
+        address = str(token[2:len(token)]).strip()
+    except AttributeError:
+        address = None
+
+    if name != None:
         return Query(query.TRACK_SHOP,
                       dict(
-                           shop = shop,
+                           shop = name,
+                           address = address,
+                           start_time = message.time,
                            phone = message.phone
                            )
                       )
@@ -201,13 +224,37 @@ def parse_track(message, shop):
         return None
 
 
-def parse_untrack(message, shop):
+def parse_untrack(message, tokens):
     """ shop track stop parser """
-    # shop untrack ('unfollow') (based on shop name)
-    if shop != None:
+
+    # shop name
+    try:
+        token = re.search('[Nn]:.*', tokens).group(0)
+        # eliminate other sections
+        pos = re.search('[AaCc]:', token)
+        if pos != None:
+            token = token[:pos.start()]
+        name = str(token[2:len(token)]).strip()
+    except AttributeError:
+        name = tokens.strip()
+
+    # address; if not provided in subscription SMS,
+    # keep address blank for next stage (LBS+geocode based location)
+    try:
+        token = re.search('[Aa]:.*', tokens).group(0)
+        # eliminate other sections
+        pos = re.search('[NnCc]:', token)
+        if pos != None:
+            token = token[:pos.start()]
+        address = str(token[2:len(token)]).strip()
+    except AttributeError:
+        address = None
+
+    if name != None:
         return Query(query.UNTRACK_SHOP,
                       dict(
-                           shop = shop,
+                           shop = name,
+                           address = address,
                            phone = message.phone
                            )
                       )
@@ -250,4 +297,4 @@ def parse_unreg(message, tokens):
                       )
     # undefined query
     else:
-        raise QueryException()
+        raise UnregistrationException()
