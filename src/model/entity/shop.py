@@ -24,7 +24,7 @@ class Shop(BaseEntity):
     '''
 
     def __init__(self, name, phone, address, category, reg_time, location,
-                 status='', last_update='', lifetime='',
+                 status='', last_update='', lifetime=24,
                  persisted=False, changes=None):
         """ initialize a new Shop """
         self.phone = phone
@@ -43,20 +43,23 @@ class Shop(BaseEntity):
         """ persist current Shop entity data in storage """
         entity_manager.persist_shop(self)
     
-    @classmethod
-    def check_status_expiry(cls, a_shop):
-        """ check if shop status expired, and notify the owner """
+    def delete(self):
+        """ delete current Customer entity data from storage """
+        entity_manager.delete_customer(self)
+    
+    def check_status_expiry(self):
+        """ check if Shop status expired, and notify the owner """
         try:
-            if (a_shop.last_update != None
-                and util.get_delay(a_shop.last_update) >= a_shop.lifetime):
-                a_shop.status = ''
-                a_shop.changes = STATUS_CHANGED
-                cls.persist(a_shop)
+            if (self.last_update != None
+                and util.get_delay(self.last_update) >= self.lifetime):
+                self.status = ''
+                self.changes = STATUS_CHANGED
+                self.persist()
                 
                 # notify the shop owner to update his status
-                reply_sms = OutgoingSMS(a_shop.phone, util.current_time(), 
+                reply_sms = OutgoingSMS(self.phone, util.current_time(), 
                                         (MSG_REMIND_STATUS_UPDATE %
-                                         a_shop.name))
+                                         self.name))
                 sms_sender.send(reply_sms)
                 reply_sms.persist()
         except BaseException as e:
@@ -69,7 +72,7 @@ class Shop(BaseEntity):
         
         # check if shop status is expired; if so, remove it
         if result != None:
-            cls.check_status_expiry(result)
+            result.check_status_expiry()
         
         return result
     
@@ -91,7 +94,7 @@ class Shop(BaseEntity):
         # check if shop statuses is expired; if so, remove them
         if data != None:
             for a_shop in data: 
-                cls.check_status_expiry(a_shop)
+                a_shop.check_status_expiry()
         
         return data
         
@@ -122,6 +125,6 @@ class Shop(BaseEntity):
         # check if shop statuses is expired; if so, remove them
         if data != None:
             for a_shop in data: 
-                cls.check_status_expiry(a_shop)
+                a_shop.check_status_expiry()
         
         return data

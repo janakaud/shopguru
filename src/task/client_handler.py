@@ -27,27 +27,30 @@ MSG_MISSING_SHOP_DETAILS = ('Sorry! You must provide shop name, address '
                             message_parser.MSG_REG_SHOP)
 MSG_WRONG_REGISTRATION = ('Sorry! You must use\n\n' + 
                           message_parser.MSG_REG_CUST + '\n\nor\n\n' +
-                          message_parser.MSG_REG_SHOP + '\n\nto register')
-MSG_BAD_QUERY = 'Sorry! We could not understand your query'
+                          message_parser.MSG_REG_SHOP + '\n\nto register.')
+MSG_WRONG_UNREGISTRATION = ('Sorry! You must use\n\n' + 
+                          message_parser.MSG_UNREG_CUST + '\n\nor\n\n' +
+                          message_parser.MSG_UNREG_SHOP + '\n\nto unregister.')
+MSG_BAD_QUERY = 'Sorry! We could not understand your query.'
 
 # general error
 MSG_ERROR = 'Sorry! An error occurred. Please try again.'
 
 # repeat registration
 MSG_CUST_ALREADY_REGISTERED = ('Sorry %s! You have already registered to '
-                               'ShopGuru as a customer (%s) on %s')
+                               'ShopGuru as a customer (%s) on %s.')
 MSG_SHOP_ALREADY_REGISTERED = ('Sorry %s! You have already registered to '
-                               'ShopGuru as a shop (%s) on %s')
+                               'ShopGuru as a shop (%s) on %s.')
 
 # not registered
 MSG_CUST_NOT_REGISTERED = ('Sorry! You have not yet registered under '
                            'ShopGuru as a customer. Please reply with\n\n'
                            + message_parser.MSG_REG_CUST
-                           + '\nto register.')
+                           + '\n\nto register.')
 MSG_SHOP_NOT_REGISTERED = ('Sorry! You have not yet registered under '
                            'ShopGuru as a shop. Please reply with\n\n'
                            + message_parser.MSG_REG_SHOP
-                           + '\nto register.')
+                           + '\n\nto register.')
 
 # find by category
 MSG_FOUND_SHOP_FOR_CATEGORY = '%s\n%s\n%s\n\n'
@@ -62,20 +65,21 @@ MSG_BASED_ON_LOCATION = ' based on your current location'
 
 # repeat subscription
 MSG_ALREADY_SUBSCRIBED = ('Sorry %s! You have already subscribed under '
-                           'the shop %s')
+                           'the shop %s.')
 
 # unsubscribe errors
 MSG_CUST_NOT_SUBSCRIBED = ('Sorry %s! We could not find any subscriptions '
-                           'for you')
+                           'for you.')
 MSG_CUST_NOT_SUBSCRIBED_FOR_SHOP = ('Sorry %s! You are not subscribed'
-                                    ' under the shop %s')
+                                    ' under the shop %s.')
 
 # success
 MSG_WELCOME = 'Welcome to ShopGuru, %s!'
 MSG_SHOP_STATUS_UPDATED = ('%s, your shop status was updated successfully to'
-                           ' "%s"!')
+                           ' "%s".')
 MSG_SUBSCRIBED_TO_SHOP = '%s, you got subscribed under %s successfully!'
-MSG_UNSUBSCRIBED_FROM_SHOP = '%s, you got unsubscribed from %s successfully!'
+MSG_UNSUBSCRIBED_FROM_SHOP = '%s, you got unsubscribed from %s successfully.'
+MSG_GOODBYE = 'Goodbye %s! We hope to see you back at ShopGuru some day!'
 
 
 class ClientHandler(Thread):
@@ -131,6 +135,9 @@ class ClientHandler(Thread):
         except RegistrationException as e:  # REG SHOP with no name
             logging.info(e)
             reply = MSG_WRONG_REGISTRATION
+        except UnregistrationException as e:  # REG SHOP with no name
+            logging.info(e)
+            reply = MSG_WRONG_UNREGISTRATION
         except QueryException as e:  #invalid query
             logging.info(e)
             reply = MSG_BAD_QUERY 
@@ -336,6 +343,59 @@ class ClientHandler(Thread):
                     reply = MSG_ERROR
         return reply
 
+    def check_shop_status(self):
+        """ return status of subscribed shop(s): workflow """
+        # check customer; proceed only if a registered customer
+        shop_name = self.query.params['shop']
+        phone = self.query.params['phone']
+        
+        cust = Customer.retrieve(phone)
+        
+        reply = None    # reply message
+        
+        if cust == None:    # respond with error if not registered
+            logging.info('ERROR: Customer not registered')
+            reply = MSG_CUST_NOT_REGISTERED
+        else:
+            # get all subscriptions of customer
+            subs = Subscription.search_by_cust(cust.phone)
+            if subs == None:
+                # cannot proceed; no subscriptions
+                logging.info('ERROR: No subscription found')
+                reply = MSG_CUST_NOT_SUBSCRIBED % cust.name
+            else:
+                # get all matching shops
+                shops = Shop.search_by_name(shop_name)
+                if shops == None:
+                    logging.info('ERROR: No shop found for status check')
+                    reply = MSG_NO_SHOPS_FOR_NAME % cust.name
+                else:
+                    # get intersection of shop list and customer subscriptions
+                    candidates = [sh for sh in shops
+                                  if (sh.phone in [su.shop_phone 
+                                                   for su in subs])]
+                    if len(candidates) > 0:
+                        # create a message of at most 160 characters (1 SMS)
+                        reply = ''
+                        temp = ''
+                        
+                        for match in candidates:
+                            temp += (MSG_FOUND_SHOP_FOR_CATEGORY % 
+                                     (match.name, match.address, match.status))
+                            # include at least one result
+                            if (len(temp.strip()) <= app_config.MAX_MSG_LENGTH
+                                or reply == ''):
+                                reply = temp.strip()
+                            else:
+                                logging.info('DONE: Shop find query')
+                                break
+                    else:
+                        # cannot proceed; no matching subscriptions
+                        logging.info('ERROR: No subscription found for shop')
+                        reply = MSG_CUST_NOT_SUBSCRIBED_FOR_SHOP % (cust.name, 
+                                                                    shop_name)
+        return reply
+
     def untrack_shop(self):
         """ unsubscribe customer from given shop: workflow """
         # check customer; proceed only if a registered customer
@@ -368,8 +428,6 @@ class ClientHandler(Thread):
                     reply = MSG_NO_SHOPS_FOR_NAME % cust.name
                 else:
                     # get intersection of shop list and customer subscriptions
-                    logging.info(shops[0].phone)
-                    logging.info(subs[0].shop_phone)
                     candidates = [su for su in subs 
                                   if su.shop_phone in
                                   [sh.phone for sh in shops]]
@@ -399,6 +457,48 @@ class ClientHandler(Thread):
                             logging.error(e)
                             reply = MSG_ERROR
         return reply
+
+    def unregister_cust(self):
+        """ customer registration workflow """
+        # check for customer in database; proceed only if present
+        phone = self.query.params['phone']
+        cust = Customer.retrieve(phone)
+        
+        reply = None    # reply message
+        
+        if cust == None:    # respond with error if not registered
+            logging.info('ERROR: Customer not registered')
+            reply = MSG_CUST_NOT_REGISTERED
+        else:   # unregister, and confirm
+            try:
+                cust.delete()
+                logging.info('DONE: Customer unregistered')
+                reply = MSG_GOODBYE % cust.name
+            except BaseException as e:
+                logging.error(e)
+                reply = MSG_ERROR
+        return reply
+    
+    def unregister_shop(self):
+        """ shop registration workflow """
+        # check for shop in database; proceed only if present
+        phone = self.query.params['phone']
+        shop = Shop.retrieve(phone)
+        
+        reply = None    # reply message
+        
+        if shop == None:    # respond with error if not registered
+            logging.info('ERROR: Shop not registered')
+            reply = MSG_SHOP_NOT_REGISTERED
+        else:   # unregister, and confirm
+            try:
+                shop.delete()
+                logging.info('DONE: Shop unregistered')
+                reply = MSG_GOODBYE % shop.name
+            except BaseException as e:
+                logging.error(e)
+                reply = MSG_ERROR
+        return reply
     
     """ Helper methods """
     
@@ -425,7 +525,7 @@ class ClientHandler(Thread):
             else:
                 return reply
             
-    def fetch_shops_to_subscribe(self, cust_phone, shop_name, address):
+    def fetch_shops_to_subscribe(self, cust_phone, shop_name, address=None):
         """ fetches shops based on provided parameters
             and customer location, if required """
         shops = None

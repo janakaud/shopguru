@@ -23,6 +23,10 @@ class Customer(BaseEntity):
         """ persist current Customer entity data in storage """
         entity_manager.persist_customer(self)
     
+    def delete(self):
+        """ delete current Customer entity data from storage """
+        entity_manager.delete_customer(self)
+    
     @classmethod
     def retrieve(cls, phone):
         """ retrieve Customer (if any) with given phone number """

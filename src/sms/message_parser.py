@@ -13,6 +13,8 @@ from exception.exception import *
 # messaging formats - for reference
 MSG_REG_SHOP = 'REG SHOP N:shop-name A:shop-address C:shop-category'
 MSG_REG_CUST = 'REG CUST N:name A:address'
+MSG_UNREG_SHOP = 'UNREG SHOP'
+MSG_UNREG_CUST = 'UNREG CUST'
 
 
 def parse(message):
@@ -20,38 +22,35 @@ def parse(message):
     # convert message to lowercase and tokenize
     text = message.content
     tokens = re.split('\s', text, 1)
-    
-    msg_query = None
     tokens[0] = tokens[0].lower()
     
-    try:
-        # registration
-        if tokens[0] == 'reg':
-            msg_query = parse_reg(message, tokens[1])
-        # category-based shop find - customer
-        elif tokens[0] == 'find':
-            msg_query = parse_find(message, tokens[1])
-        # subscribed shop status - customer
-        elif tokens[0] == 'status':
-            msg_query = parse_check_status(message, tokens[1])
-        # subscribing under given shop name - customer
-        elif tokens[0] == 'track':
-            msg_query = parse_track(message, tokens[1])
-        # unsubscribing under given shop name - customer
-        elif tokens[0] == 'untrack':
-            msg_query = parse_untrack(message, tokens[1])
-        # updating shop status - shop
-        elif tokens[0] == 'update':
-            msg_query = parse_update_status(message, tokens[1])
-        # unregistration
-        elif tokens[0] == 'unreg':
-            msg_query = parse_unreg(message, tokens[1])
-        else:
-            raise QueryException()
-    except IndexError:
-        raise QueryException()
+    # handle single-word queries
+    if len(tokens) == 1:
+        tokens.append('')
     
-    return msg_query
+    # registration
+    if tokens[0] == 'reg':
+        return parse_reg(message, tokens[1])
+    # category-based shop find - customer
+    elif tokens[0] == 'find':
+        return parse_find(message, tokens[1])
+    # subscribed shop status - customer
+    elif tokens[0] == 'status':
+        return parse_check_status(message, tokens[1])
+    # subscribing under given shop name - customer
+    elif tokens[0] == 'track':
+        return parse_track(message, tokens[1])
+    # unsubscribing under given shop name - customer
+    elif tokens[0] == 'untrack':
+        return parse_untrack(message, tokens[1])
+    # updating shop status - shop
+    elif tokens[0] == 'update':
+        return parse_update_status(message, tokens[1])
+    # unregistration
+    elif tokens[0] == 'unreg':
+        return parse_unreg(message, tokens[1])
+    else:
+        raise QueryException()
 
 
 def parse_reg(message, tokens):

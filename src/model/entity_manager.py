@@ -86,6 +86,14 @@ def retrieve_customer(phone):
         return None
 
 
+def delete_customer(a_cust):
+    """ deletes Customer entity """
+    if a_cust.persisted == True:  # delete
+        get_manager().delete_record('customer', ['phone'], [a_cust.phone])
+    else:   # not in storage yet!
+        raise EntityNotPersistedException
+
+
 def search_customer(filter_fields, filter_values):
     """ retrieves any Customers matching given criteria """
     # deferred import to circumvent circular dependency
@@ -182,6 +190,14 @@ def retrieve_shop(phone):
         return None
 
 
+def delete_shop(a_shop):
+    """ deletes Shop entity """
+    if a_shop.persisted == True:  # delete
+        get_manager().delete_record('shop', ['phone'], [a_shop.phone])
+    else:   # not in storage yet!
+        raise EntityNotPersistedException
+
+
 def search_shop(filter_fields, filter_values,
                 order_fields=None, order_values=None, search_with_like=False):
     """ retrieves any Shops matching given criteria """
@@ -258,12 +274,12 @@ def retrieve_subscription(cust_phone, shop_phone):
 
 
 def delete_subscription(a_subs):
-    """ persists Subscription entity """
-    if a_subs.persisted == True:  # not in storage; create new record
+    """ deletes Subscription entity """
+    if a_subs.persisted == True:  # delete
         get_manager().delete_record('subscription',
                                     ['cust_phone', 'shop_phone'],
                                     [a_subs.cust_phone, a_subs.shop_phone])
-    else:   # already in storage; update possible fieles of existing record
+    else:   # not persisted yet!
         raise EntityNotPersistedException
 
 
