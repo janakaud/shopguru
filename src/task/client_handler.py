@@ -12,6 +12,7 @@ from model.entity.customer import Customer
 from model.entity import shop
 from model.entity.shop import Shop
 from model.entity.location import Location
+from model.entity import subscription
 from model.entity.subscription import Subscription
 from model.entity.message import IncomingSMS, OutgoingSMS
 from exception.exception import *
@@ -50,19 +51,31 @@ MSG_SHOP_NOT_REGISTERED = ('Sorry! You have not yet registered under '
 
 # find by category
 MSG_FOUND_SHOP_FOR_CATEGORY = '%s\n%s\n%s\n\n'
-MSG_NO_SHOPS_FOR_CATEGORY = ('Sorry, no shops were found for the ' 
+MSG_NO_SHOPS_FOR_CATEGORY = ('Sorry %s! no shops were found for the ' 
                              '%s category.')
 
 # subscribe
 MSG_FOUND_SHOP_FOR_NAME = '%s\n%s\n\n'
-MSG_NO_SHOPS_FOR_NAME = 'Sorry! We could not find a matching shop.'
+MSG_NO_SHOPS_FOR_NAME = 'Sorry %s! We could not find a matching shop.'
 MSG_FOUND_MANY_SHOPS = 'We found multiple shops%s:\n\n'
 MSG_BASED_ON_LOCATION = ' based on your current location'
 
+# repeat subscription
+MSG_ALREADY_SUBSCRIBED = ('Sorry %s! You have already subscribed under '
+                           'the shop %s')
+
+# unsubscribe errors
+MSG_CUST_NOT_SUBSCRIBED = ('Sorry %s! We could not find any subscriptions '
+                           'for you')
+MSG_CUST_NOT_SUBSCRIBED_FOR_SHOP = ('Sorry %s! You are not subscribed'
+                                    ' under the shop %s')
+
 # success
 MSG_WELCOME = 'Welcome to ShopGuru, %s!'
-MSG_SHOP_STATUS_UPDATED = 'Your shop status was updated successfully!'
-MSG_SUBSCRIBED_TO_SHOP = 'You got subscribed under %s successfully'
+MSG_SHOP_STATUS_UPDATED = ('%s, your shop status was updated successfully to'
+                           ' "%s"!')
+MSG_SUBSCRIBED_TO_SHOP = '%s, you got subscribed under %s successfully!'
+MSG_UNSUBSCRIBED_FROM_SHOP = '%s, you got unsubscribed from %s successfully!'
 
 
 class ClientHandler(Thread):
@@ -139,6 +152,7 @@ class ClientHandler(Thread):
         reply = None    # reply message
         
         if cust != None:    # respond with error if already registered
+            logging.info('ERROR: Customer already registered')
             reply = (MSG_CUST_ALREADY_REGISTERED % 
                      (name, cust.name, util.extract_date(str(cust.reg_time))))
         else:   # register, and confirm
@@ -155,6 +169,7 @@ class ClientHandler(Thread):
                                 location=location)
             try:
                 new_cust.persist()
+                logging.info('DONE: Customer registered')
                 reply = MSG_WELCOME % name
             except BaseException as e:
                 logging.error(e)
@@ -173,6 +188,7 @@ class ClientHandler(Thread):
         reply = None    # reply message
         
         if shop != None:    # respond with error if already registered
+            logging.info('ERROR: Shop already registered')
             reply = (MSG_SHOP_ALREADY_REGISTERED % 
                      (name, shop.name, util.extract_date(str(shop.reg_time))))
         else:   # register, and confirm
@@ -191,6 +207,7 @@ class ClientHandler(Thread):
                             location=location)
             try:
                 new_shop.persist()
+                logging.info('DONE: Shop registered')
                 reply = MSG_WELCOME % name
             except BaseException as e:
                 logging.error(e)
@@ -208,6 +225,7 @@ class ClientHandler(Thread):
         reply = None    # reply message
         
         if shop_o == None:    # respond with error if not registered
+            logging.info('ERROR: Shop not registered')
             reply = MSG_SHOP_NOT_REGISTERED
         else:   # update status, and confirm
             shop_o.status = status
@@ -215,7 +233,8 @@ class ClientHandler(Thread):
             
             try:
                 shop_o.persist()
-                reply = MSG_SHOP_STATUS_UPDATED
+                logging.info('DONE: Shop status updated')
+                reply = MSG_SHOP_STATUS_UPDATED % (shop_o.name, status)
             except BaseException as e:
                 logging.error(e)
                 reply = MSG_ERROR
@@ -232,6 +251,7 @@ class ClientHandler(Thread):
         reply = None    # reply message
         
         if cust == None:    # respond with error if not registered
+            logging.info('ERROR: Customer not registered')
             reply = MSG_CUST_NOT_REGISTERED
         else:
             try:
@@ -253,9 +273,11 @@ class ClientHandler(Thread):
                             or reply == ''):
                             reply = temp.strip()
                         else:
+                            logging.info('DONE: Shop find query')
                             break
                 else:
-                    reply = MSG_NO_SHOPS_FOR_CATEGORY % category
+                    logging.info('DONE: No shops found for query')
+                    reply = MSG_NO_SHOPS_FOR_CATEGORY % (cust.name, category)
             except BaseException as e:
                 logging.error(e)
                 reply = MSG_ERROR
@@ -273,54 +295,152 @@ class ClientHandler(Thread):
         reply = None    # reply message
         
         if cust == None:    # respond with error if not registered
+            logging.info('ERROR: Customer not registered')
             reply = MSG_CUST_NOT_REGISTERED
         else:
-            shops = None
-            
-            # did we use customer's location to find the shop?
-            location_estimate = False
-            
-            # search by address (if available)
-            if address != None: 
-                shops = Shop.search_by_name(name=shop_name, address=address)
-            else:
-                location_estimate = True
-                location = lbs_handler.request(phone)
-                shops = Shop.search_by_name(name=shop_name, location=location)
-    
+            # get all matching shops
+            (shops, 
+             location_estimate) = self.fetch_shops_to_subscribe(phone, 
+                                                                shop_name, 
+                                                                address)
             if shops == None:
-                reply = MSG_NO_SHOPS_FOR_NAME
+                logging.info('ERROR: No shop found for subscription')
+                reply = MSG_NO_SHOPS_FOR_NAME % cust.name
             elif len(shops) != 1:
-                # more than 1 shop found
-                
-                # create a message of at most 160 characters (1 SMS)
-                temp = MSG_FOUND_MANY_SHOPS
-                if location_estimate:
-                    # tell the user we used LBS
-                    temp = temp % MSG_BASED_ON_LOCATION
-                else:
-                    temp = temp % ''
-                
-                # show as many of found shops as possible
-                for match in shops:
-                    temp += (MSG_FOUND_SHOP_FOR_NAME % 
-                             (match.name, match.address))
-                    # include at least one result
-                    if (len(temp.strip()) <= app_config.MAX_MSG_LENGTH or 
-                        reply == ''):
-                        reply = temp.strip()
-                    else:
-                        break
+                logging.info('ERROR: Many shops found for subscription')
+                # say customer we found many matches
+                reply = self.found_many_shops_msg(shops, location_estimate)
             else:
                 # exactly 1 shop found
+                cust_phone = cust.phone
+                shop_phone = shops[0].phone
+                
                 try:
-                    new_subs = Subscription(cust_phone=cust.phone,
-                                            shop_phone=shops[0].phone,
-                                            start_time=
-                                            self.query.params['start_time'])
-                    new_subs.persist()
-                    reply = MSG_SUBSCRIBED_TO_SHOP % shops[0].name
+                    # check if already subscribed
+                    if Subscription.exists(cust_phone, shop_phone):
+                        logging.info('ERROR: Subscription exists')
+                        reply = (MSG_ALREADY_SUBSCRIBED %
+                                 (cust.name, shops[0].name))
+                    else:
+                        new_subs = Subscription(cust_phone=cust_phone,
+                                                shop_phone=shop_phone,
+                                                start_time=
+                                                self.query.params['start_time']
+                                                )
+                        new_subs.persist()
+                        logging.info('DONE: Subscription made')
+                        reply = MSG_SUBSCRIBED_TO_SHOP % (cust.name, 
+                                                          shops[0].name)
                 except BaseException as e:
                     logging.error(e)
                     reply = MSG_ERROR
         return reply
+
+    def untrack_shop(self):
+        """ unsubscribe customer from given shop: workflow """
+        # check customer; proceed only if a registered customer
+        shop_name = self.query.params['shop']
+        address = self.query.params['address']
+        phone = self.query.params['phone']
+        
+        cust = Customer.retrieve(phone)
+        
+        reply = None    # reply message
+        
+        if cust == None:    # respond with error if not registered
+            logging.info('ERROR: Customer not registered')
+            reply = MSG_CUST_NOT_REGISTERED
+        else:
+            # get all subscriptions of customer
+            subs = Subscription.search_by_cust(cust.phone)
+            if subs == None:
+                # cannot unsubscribe; no subscriptions
+                logging.info('ERROR: No subscription found')
+                reply = MSG_CUST_NOT_SUBSCRIBED % cust.name
+            else:
+                # get all matching shops
+                (shops, 
+                 location_estimate) = self.fetch_shops_to_subscribe(phone, 
+                                                                    shop_name, 
+                                                                    address)
+                if shops == None:
+                    logging.info('ERROR: No shop found for unsubscription')
+                    reply = MSG_NO_SHOPS_FOR_NAME % cust.name
+                else:
+                    # get intersection of shop list and customer subscriptions
+                    logging.info(shops[0].phone)
+                    logging.info(subs[0].shop_phone)
+                    candidates = [su for su in subs 
+                                  if su.shop_phone in
+                                  [sh.phone for sh in shops]]
+                    
+                    if len(candidates) > 1:
+                        # say customer we found many matches
+                        logging.info('ERROR: Multiple subscriptions '
+                                     'found for unsubscription')
+                        reply = self.found_many_shops_msg(shops, 
+                                                          location_estimate)
+                    elif len(candidates) == 0:
+                        # cannot unsubscribe; no matching subscriptions
+                        logging.info('ERROR: No subscription found for shop')
+                        reply = MSG_CUST_NOT_SUBSCRIBED_FOR_SHOP % (cust.name, 
+                                                                    shop_name)
+                    else:
+                        # exactly 1 shop found
+                        try:
+                            # delete subscription
+                            shop_phone = candidates[0].shop_phone 
+                            candidates[0].delete()
+                            logging.info('DONE: Unsubscribed from shop')
+                            reply = (MSG_UNSUBSCRIBED_FROM_SHOP
+                                     % (cust.name, [sh for sh in shops 
+                                        if (sh.phone == shop_phone)][0].name))
+                        except BaseException as e:
+                            logging.error(e)
+                            reply = MSG_ERROR
+        return reply
+    
+    """ Helper methods """
+    
+    def found_many_shops_msg(self, shops, location_estimate=False):
+        """ generates message for multiple shop search results """
+        # create a message of at most 160 characters (1 SMS)
+        temp = MSG_FOUND_MANY_SHOPS % ''
+        reply = ''
+        
+        if location_estimate:
+            # tell the user we used LBS
+            temp = temp % MSG_BASED_ON_LOCATION
+        else:
+            temp = temp % ''
+        
+        # show as many of found shops as possible
+        for match in shops:
+            temp += (MSG_FOUND_SHOP_FOR_NAME % 
+                     (match.name, match.address))
+            # include at least one result
+            if (len(temp.strip()) <= app_config.MAX_MSG_LENGTH
+                or reply == ''):
+                reply = temp.strip()
+            else:
+                return reply
+            
+    def fetch_shops_to_subscribe(self, cust_phone, shop_name, address):
+        """ fetches shops based on provided parameters
+            and customer location, if required """
+        shops = None
+        
+        # did we use customer's location to find the shop?
+        location_estimate = False
+        
+        # search by address (if available)
+        if address != None: 
+            shops = Shop.search_by_name(name=shop_name, address=address)
+        else:
+            logging.info('INFO: Address not found for subscription,'
+                         ' trying location')
+            location_estimate = True
+            location = lbs_handler.request(cust_phone)
+            shops = Shop.search_by_name(name=shop_name, location=location)
+        
+        return (shops, location_estimate)

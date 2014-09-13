@@ -6,6 +6,7 @@ in the persistent storage.
 '''
 
 from db.mysql_data_manager import MySQLDataManager
+from exception.exception import EntityNotPersistedException
 
 manager = None
 
@@ -254,6 +255,16 @@ def retrieve_subscription(cust_phone, shop_phone):
                             persisted=True)
     else:
         return None
+
+
+def delete_subscription(a_subs):
+    """ persists Subscription entity """
+    if a_subs.persisted == True:  # not in storage; create new record
+        get_manager().delete_record('subscription',
+                                    ['cust_phone', 'shop_phone'],
+                                    [a_subs.cust_phone, a_subs.shop_phone])
+    else:   # already in storage; update possible fieles of existing record
+        raise EntityNotPersistedException
 
 
 def search_subscription(filter_fields, filter_values):

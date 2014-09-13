@@ -47,3 +47,13 @@ class MissingShopCategoryException(RegistrationException):
 class UnregistrationException(QueryException):
     def __str__(self):
         return 'ERROR: Invalid unregistration query'
+
+
+class EntityException(ShopGuruException):
+    def __str__(self):
+        return 'ERROR: Invalid entity operation'
+
+
+class EntityNotPersistedException(EntityException):
+    def __str__(self):
+        return 'ERROR: Attempt to manipulate nonpersistent entity'

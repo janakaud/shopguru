@@ -25,6 +25,10 @@ class Subscription(BaseEntity):
     def persist(self):
         """ persist current Subscription entity data in storage """
         entity_manager.persist_subscription(self)
+    
+    def delete(self):
+        """ delete current Subscription entity data from storage """
+        entity_manager.delete_subscription(self)
         
     @classmethod
     def retrieve(cls, cust_phone, shop_phone):
@@ -35,3 +39,8 @@ class Subscription(BaseEntity):
     def exists(cls, cust_phone, shop_phone):
         """ see if a Subscription exists between given phone numbers """
         return (cls.retrieve(cust_phone, shop_phone) != None)
+    
+    @classmethod
+    def search_by_cust(cls, cust_phone):
+        """ retrieve all Subscriptions (if any) of given customer """
+        return entity_manager.search_subscription(['cust_phone'], [cust_phone])
