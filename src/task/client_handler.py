@@ -5,6 +5,7 @@
 import logging
 from threading import Thread
 from sms import sms_sender, message_parser
+from sms.message_parser import *
 from task import query
 from config import util, app_config
 from lbs import lbs_handler
@@ -21,17 +22,58 @@ from maps import geocoder
 ''' message templates used in the module '''
 # registration errors 
 MSG_MISSING_CUST_DETAILS = ('Sorry! You must provide your name and address'
-                            ' as\n\n' + message_parser.MSG_REG_CUST)
+                            ' as\n\n' + MSG_REG_CUST)
 MSG_MISSING_SHOP_DETAILS = ('Sorry! You must provide shop name, address '
                             'and category  as\n\n' + 
-                            message_parser.MSG_REG_SHOP)
+                            MSG_REG_SHOP)
 MSG_WRONG_REGISTRATION = ('Sorry! You must use\n\n' + 
-                          message_parser.MSG_REG_CUST + '\n\nor\n\n' +
-                          message_parser.MSG_REG_SHOP + '\n\nto register.')
+                          MSG_REG_CUST + '\n\nor\n\n' +
+                          MSG_REG_SHOP + '\n\nto register.')
 MSG_WRONG_UNREGISTRATION = ('Sorry! You must use\n\n' + 
-                          message_parser.MSG_UNREG_CUST + '\n\nor\n\n' +
-                          message_parser.MSG_UNREG_SHOP + '\n\nto unregister.')
+                          MSG_UNREG_CUST + '\n\nor\n\n' +
+                          MSG_UNREG_SHOP + '\n\nto unregister.')
 MSG_BAD_QUERY = 'Sorry! We could not understand your query.'
+
+# input validation errors
+MSG_TOO_SHORT = 'Sorry! Please use a longer %s (at least %s letters).'
+MSG_TOO_LONG = 'Sorry! Please use a shorter %s (less than %s letters).'
+
+MSG_NAME_TOO_SHORT = MSG_TOO_SHORT % ('name', '%s')
+MSG_NAME_TOO_LONG = MSG_TOO_LONG % ('name', '%s')
+MSG_ACTUAL_NAME_TOO_SHORT = (MSG_NAME_TOO_SHORT 
+                             % str(MIN_NAME_ACTUAL))
+MSG_ACTUAL_NAME_TOO_LONG = (MSG_NAME_TOO_LONG
+                             % str(MAX_NAME_ACTUAL))
+MSG_QUERY_NAME_TOO_SHORT = (MSG_NAME_TOO_SHORT 
+                             % str(MIN_NAME_QUERY))
+MSG_QUERY_NAME_TOO_LONG = (MSG_NAME_TOO_LONG
+                             % str(MAX_NAME_QUERY))
+
+MSG_ADDRESS_TOO_SHORT = MSG_TOO_SHORT % ('address', '%s')
+MSG_ADDRESS_TOO_LONG = MSG_TOO_LONG % ('address', '%s')
+MSG_ACTUAL_ADDRESS_TOO_SHORT = (MSG_ADDRESS_TOO_SHORT 
+                             % str(MIN_ADDRESS_ACTUAL))
+MSG_ACTUAL_ADDRESS_TOO_LONG = (MSG_ADDRESS_TOO_LONG
+                             % str(MAX_ADDRESS_ACTUAL))
+MSG_QUERY_ADDRESS_TOO_SHORT = (MSG_ADDRESS_TOO_SHORT 
+                             % str(MIN_ADDRESS_QUERY))
+MSG_QUERY_ADDRESS_TOO_LONG = (MSG_ADDRESS_TOO_LONG
+                             % str(MAX_ADDRESS_QUERY))
+
+MSG_CATEGORY_TOO_SHORT = MSG_TOO_SHORT % ('category', '%s')
+MSG_CATEGORY_TOO_LONG = MSG_TOO_LONG % ('category', '%s')
+MSG_ACTUAL_CATEGORY_TOO_SHORT = (MSG_CATEGORY_TOO_SHORT 
+                             % str(MIN_CATEGORY_ACTUAL))
+MSG_ACTUAL_CATEGORY_TOO_LONG = (MSG_CATEGORY_TOO_LONG
+                             % str(MAX_CATEGORY_ACTUAL))
+MSG_QUERY_CATEGORY_TOO_SHORT = (MSG_CATEGORY_TOO_SHORT 
+                             % str(MIN_CATEGORY_QUERY))
+MSG_QUERY_CATEGORY_TOO_LONG = (MSG_CATEGORY_TOO_LONG
+                             % str(MAX_CATEGORY_QUERY))
+
+MSG_STATUS_TOO_SHORT = (MSG_TOO_SHORT 
+                        % ('status', str(MIN_STATUS)))
+MSG_STATUS_TOO_LONG = MSG_TOO_LONG % ('status', str(MAX_STATUS))
 
 # general error
 MSG_ERROR = 'Sorry! An error occurred. Please try again.'
@@ -45,11 +87,11 @@ MSG_SHOP_ALREADY_REGISTERED = ('Sorry %s! You have already registered to '
 # not registered
 MSG_CUST_NOT_REGISTERED = ('Sorry! You have not yet registered under '
                            'ShopGuru as a customer. Please reply with\n\n'
-                           + message_parser.MSG_REG_CUST
+                           + MSG_REG_CUST
                            + '\n\nto register.')
 MSG_SHOP_NOT_REGISTERED = ('Sorry! You have not yet registered under '
                            'ShopGuru as a shop. Please reply with\n\n'
-                           + message_parser.MSG_REG_SHOP
+                           + MSG_REG_SHOP
                            + '\n\nto register.')
 
 # find by category
@@ -124,14 +166,57 @@ class ClientHandler(Thread):
                 reply = self.unregister_cust()
             elif self.query.type == query.SHOP_UNREGISTER:
                 reply = self.unregister_shop()
-             
-        except MissingCustomerNameException as e:  # REG CUST with no name
+                
+        # missing query registration parameters             
+        except MissingCustomerNameException as e:
             logging.info(e)
             reply = MSG_MISSING_CUST_DETAILS
         except (MissingShopNameException, MissingShopCategoryException) as e:
-            # REG SHOP with no name
             logging.info(e)
             reply = MSG_MISSING_SHOP_DETAILS
+        # input validation errors
+        except QueryNameTooShortException as e:
+            logging.info(e)
+            reply = MSG_QUERY_NAME_TOO_SHORT
+        except QueryNameTooLongException as e:
+            logging.info(e)
+            reply = MSG_QUERY_NAME_TOO_LONG
+        except QueryAddressTooShortException as e:
+            logging.info(e)
+            reply = MSG_QUERY_ADDRESS_TOO_SHORT
+        except QueryAddressTooLongException as e:
+            logging.info(e)
+            reply = MSG_QUERY_ADDRESS_TOO_LONG
+        except QueryCategoryTooShortException as e:
+            logging.info(e)
+            reply = MSG_QUERY_CATEGORY_TOO_SHORT
+        except QueryCategoryTooLongException as e:
+            logging.info(e)
+            reply = MSG_QUERY_CATEGORY_TOO_LONG
+        except ActualNameTooShortException as e:
+            logging.info(e)
+            reply = MSG_ACTUAL_NAME_TOO_SHORT
+        except ActualNameTooLongException as e:
+            logging.info(e)
+            reply = MSG_ACTUAL_NAME_TOO_LONG
+        except ActualAddressTooShortException as e:
+            logging.info(e)
+            reply = MSG_ACTUAL_ADDRESS_TOO_SHORT
+        except ActualAddressTooLongException as e:
+            logging.info(e)
+            reply = MSG_ACTUAL_ADDRESS_TOO_LONG
+        except ActualCategoryTooShortException as e:
+            logging.info(e)
+            reply = MSG_ACTUAL_CATEGORY_TOO_SHORT
+        except ActualCategoryTooLongException as e:
+            logging.info(e)
+            reply = MSG_ACTUAL_CATEGORY_TOO_LONG
+        except StatusTooShortException as e:
+            logging.info(e)
+            reply = MSG_STATUS_TOO_SHORT
+        except StatusTooLongException as e:
+            logging.info(e)
+            reply = MSG_STATUS_TOO_LONG
         except RegistrationException as e:  # REG SHOP with no name
             logging.info(e)
             reply = MSG_WRONG_REGISTRATION
