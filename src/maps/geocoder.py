@@ -10,6 +10,7 @@ from urllib2 import HTTPError, URLError
 from config import app_config
 import logging
 import json
+import string
 from model.entity.location import Location
 
 
@@ -20,12 +21,12 @@ def geocode(address):
     location = None
     
     # fabricate and send API request (fill address parameter)
-    url = app_config.GEOCODE_TARGET % address
+    url = app_config.GEOCODE_TARGET % string.replace(address, ' ', '+')
     
     try:
+        logging.info('Sending Geocoding API request %s' % url)
         request = urllib2.Request(url)
         response = urllib2.urlopen(request)
-        logging.info('Geocoding API request sent successfully')
 
         # get received time and message content
         received_content = response.read()

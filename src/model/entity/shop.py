@@ -6,6 +6,7 @@ from model import entity_manager
 from base_entity import BaseEntity
 from config import util
 from sms import sms_sender
+from sms.message_parser import MSG_UPDATE_STATUS
 from model.entity.message import OutgoingSMS
 import logging
 
@@ -15,7 +16,8 @@ LOCATION_CHANGED = 2
 STATUS_CHANGED = 3
 
 MSG_REMIND_STATUS_UPDATE = ('Hello %s, your shop status has expired. '
-                            'Please renew it. Thank you!')
+                            'Please renew it by replying\n\n%s\n\n'
+                            'Thank you!') % ('%s', MSG_UPDATE_STATUS)
 
 
 class Shop(BaseEntity):
@@ -24,7 +26,7 @@ class Shop(BaseEntity):
     '''
 
     def __init__(self, name, phone, address, category, reg_time, location,
-                 status='', last_update='', lifetime=24,
+                 status='?', last_update='', lifetime=24,
                  persisted=False, changes=None):
         """ initialize a new Shop """
         self.phone = phone
@@ -50,13 +52,16 @@ class Shop(BaseEntity):
     def check_status_expiry(self):
         """ check if Shop status expired, and notify the owner """
         try:
-            if (self.last_update != None
-                and util.get_delay(self.last_update) >= self.lifetime):
-                self.status = ''
+            if (self.status != '?' and 
+                (self.last_update == None
+                or util.get_delay(self.last_update) >= self.lifetime)):
+                self.status = '?'   # sentinel for non-updated statuses
                 self.changes = STATUS_CHANGED
                 self.persist()
                 
                 # notify the shop owner to update his status
+                logging.info('Reminding shop %s to update status' 
+                             % str(self.phone))
                 reply_sms = OutgoingSMS(self.phone, util.current_time(), 
                                         (MSG_REMIND_STATUS_UPDATE %
                                          self.name))

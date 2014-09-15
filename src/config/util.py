@@ -16,22 +16,22 @@ def current_time():
 
 def get_timestamp(timestamp_str):
     """ converts provided timestamp in YYYY-mm-dd format, to a time object """
-    return time.strptime('%Y-%m-%d %H:%M:%S', timestamp_str)
+    return time.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
 
 
 def get_difference(timestamp_1, timestamp_2):
     """ returns difference of two timestamps, in hours """
-    time_1 = time.strptime('%Y-%m-%d %H:%M:%S', timestamp_1)
-    time_2 = time.strptime('%Y-%m-%d %H:%M:%S', timestamp_2)
+    time_1 = time.strptime(timestamp_1, '%Y-%m-%d %H:%M:%S')
+    time_2 = time.strptime(timestamp_2, '%Y-%m-%d %H:%M:%S')
     diff = datetime.fromtimestamp(time_1) - datetime.fromtimestamp(time_2)
     return diff.seconds / 3600  # timedelta has only seconds
 
 
 def get_delay(timestamp):
     """ returns delay of given timestamp from current time, in hours """
-    cur = time.strptime('%Y-%m-%d %H:%M:%S', timestamp)
-    diff = datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(cur)
-    return diff.seconds / 3600  # timedelta has only seconds
+    cur = datetime.strptime(str(timestamp), '%Y-%m-%d %H:%M:%S')
+    diff = datetime.fromtimestamp(time.time()) - cur
+    return diff.days*24 + diff.seconds/3600
 
 
 def extract_date(timestamp_str):

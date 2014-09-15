@@ -15,6 +15,7 @@ MSG_REG_SHOP = 'REG SHOP N:shop-name A:shop-address C:shop-category'
 MSG_REG_CUST = 'REG CUST N:name A:address'
 MSG_UNREG_SHOP = 'UNREG SHOP'
 MSG_UNREG_CUST = 'UNREG CUST'
+MSG_UPDATE_STATUS = 'UPDATE status-text'
 
 # parameter length limits (ACTUAL: reg/update, QUERY: queries)
 MIN_NAME_ACTUAL = 5

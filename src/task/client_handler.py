@@ -356,6 +356,21 @@ class ClientHandler(Thread):
                 temp = ''
                 
                 if matches != None:
+                    # check if we have any subscribed shops, in list
+                    # get all subscriptions of customer
+                    subs = Subscription.search_by_cust(cust.phone)
+                    if subs != None:
+                        # get intersection of shop list and subscriptions
+                        candidates = [sh for sh in matches
+                                      if (sh.phone in [su.shop_phone 
+                                                       for su in subs])]
+                        if len(candidates) > 0:
+                            # swap subscriptions to beginning of list
+                            for match in candidates:
+                                matches = ([match] + 
+                                           matches[:matches.index(match)] + 
+                                           matches[matches.index(match)+1:]) 
+                    
                     # create a message of at most 160 characters (1 SMS)
                     for match in matches:
                         temp += (MSG_FOUND_SHOP_FOR_CATEGORY % 
@@ -474,6 +489,15 @@ class ClientHandler(Thread):
                             else:
                                 logging.info('DONE: Shop find query')
                                 break
+                        
+                        # update last query time of queried subscriptions
+                        time_now = util.current_time()
+                        queried = [su for su in subs 
+                                   if su.shop_phone in
+                                   [sh.phone for sh in shops]]
+                        for match in queried:
+                            match.last_query = time_now
+                            match.persist()
                     else:
                         # cannot proceed; no matching subscriptions
                         logging.info('ERROR: No subscription found for shop')

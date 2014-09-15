@@ -243,7 +243,7 @@ def persist_subscription(a_subs):
                                      'last_query'],
                                     [a_subs.cust_phone, a_subs.shop_phone,
                                      a_subs.start_time, a_subs.last_query])
-    else:   # already in storage; update possible fieles of existing record
+    else:   # already in storage; update possible fields of existing record
         get_manager().update_record('subscription',
                                     ['cust_phone', 'shop_phone'], 
                                     [a_subs.cust_phone, a_subs.shop_phone],
