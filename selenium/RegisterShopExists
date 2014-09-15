@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" href="http://localhost:10001/" />
+<title>RegisterCust</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">RegisterCust</td></tr>
+</thead><tbody>
+<tr>
+	<td>type</td>
+	<td>//div[6]/div/div/div/div[2]/div/input</td>
+	<td>94771122336</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>css=textarea.v-textarea</td>
+	<td>REG CUST N:Janaka Bandara</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=span.v-button-caption</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>10000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertText</td>
+	<td>//div[@id='ROOT-2521314']/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div/div[2]/div/div/div/div/div/div/div/div/div/div/div/div[2]/div/div/div/div/div/div/div/div/div/div/div[2]/div/div/div/div/div/div</td>
+	<td>glob:Sorry Janaka Bandara! You have already registered to ShopGuru as a customer (Janaka Bandara) on ????-??-??.</td>
+</tr>
+</tbody></table>
+</body>
+</html>

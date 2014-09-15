@@ -243,20 +243,20 @@ def parse_track(message, tokens):
     try:
         token = re.search('[Nn]:.*', tokens).group(0)
         # eliminate other sections
-        pos = re.search('[AaCc]:', token)
+        pos = re.search('[Aa]:', token)
         if pos != None:
             token = token[:pos.start()]
         name = str(token[2:len(token)]).strip()
-        validate_query_name(name)
     except AttributeError:
         name = tokens.strip()
+    validate_query_name(name)
 
     # address; if not provided in subscription SMS,
     # keep address blank for next stage (LBS+geocode based location)
     try:
         token = re.search('[Aa]:.*', tokens).group(0)
         # eliminate other sections
-        pos = re.search('[NnCc]:', token)
+        pos = re.search('[Nn]:', token)
         if pos != None:
             token = token[:pos.start()]
         address = str(token[2:len(token)]).strip()
@@ -284,20 +284,20 @@ def parse_untrack(message, tokens):
     try:
         token = re.search('[Nn]:.*', tokens).group(0)
         # eliminate other sections
-        pos = re.search('[AaCc]:', token)
+        pos = re.search('[Aa]:', token)
         if pos != None:
             token = token[:pos.start()]
         name = str(token[2:len(token)]).strip()
-        validate_query_name(name)
     except AttributeError:
         name = tokens.strip()
+    validate_query_name(name)
 
     # address; if not provided in subscription SMS,
     # keep address blank for next stage (LBS+geocode based location)
     try:
         token = re.search('[Aa]:.*', tokens).group(0)
         # eliminate other sections
-        pos = re.search('[NnCc]:', token)
+        pos = re.search('[Nn]:', token)
         if pos != None:
             token = token[:pos.start()]
         address = str(token[2:len(token)]).strip()

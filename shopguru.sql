@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Sep 13, 2014 at 11:07 PM
+-- Generation Time: Sep 15, 2014 at 06:11 PM
 -- Server version: 5.5.35-1ubuntu1
 -- PHP Version: 5.5.9-1ubuntu4
 
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `customer` (
 
 INSERT INTO `customer` (`phone`, `name`, `reg_time`, `latitude`, `longitude`) VALUES
 (94771000000, 'Nuran Arachchi', '2014-08-15 01:35:23', 5.230000, 89.770000),
-(94771122336, 'Janaka Bandara', '2014-09-11 03:47:01', 6.916700, 79.833300),
+(94771122336, 'Janaka Bandara', '2014-09-14 02:37:07', 6.916700, 79.833300),
 (94771122420, 'saman kumara', '2014-09-12 06:43:59', 7.468974, 80.302307),
 (94771122421, 'saman kumara', '2014-09-12 06:34:29', 7.468974, 80.302307),
 (94771122436, 'Fishy Tuna', '2014-09-11 05:04:21', 6.790456, 79.897250),
@@ -62,6 +62,19 @@ CREATE TABLE IF NOT EXISTS `incoming_sms` (
   KEY `sender` (`sender`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='incoming message log' AUTO_INCREMENT=1 ;
 
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `named_subscription`
+--
+CREATE TABLE IF NOT EXISTS `named_subscription` (
+`cust_name` varchar(25)
+,`shop_name` varchar(25)
+,`cust_phone` bigint(11) unsigned
+,`shop_phone` bigint(11) unsigned
+,`start_time` timestamp
+,`last_query` timestamp
+);
 -- --------------------------------------------------------
 
 --
@@ -102,8 +115,9 @@ CREATE TABLE IF NOT EXISTS `shop` (
 --
 
 INSERT INTO `shop` (`phone`, `name`, `address`, `category`, `reg_time`, `latitude`, `longitude`, `status`, `last_update`, `lifetime`) VALUES
-(94771122332, 'Amila Hardware', '187/17, Anandarama Road, Katubedda', 'hardware', '2014-08-15 04:24:10', 5.230000, 89.770000, 'closed from 1pm to 2pm', '2014-09-02 18:30:00', 24),
-(94771122411, 'wickrama stores', 'uhumeeya, kurunegala', 'grocery, bakery', '2014-09-12 05:27:36', 7.519004, 80.266982, '', NULL, 0),
+(94771122332, 'Amila Hardware', '187/17, Anandarama Road, Katubedda', 'hardware', '2014-08-15 04:24:10', 5.230000, 89.770000, '?', '2014-09-02 18:30:00', 24),
+(94771122336, 'Janaka Stores', 'Gepallawa, Kurunegala', 'Grocery', '2014-09-14 02:38:25', 6.916700, 79.833300, '?', NULL, 24),
+(94771122411, 'wickrama stores', 'uhumeeya, kurunegala', 'grocery, bakery', '2014-09-12 05:27:36', 7.519004, 80.266982, '?', NULL, 0),
 (94771142336, 'Dhanu Bera Kade', 'Molpe, Moratuwa', 'instruments', '2014-09-13 04:27:47', 6.792238, 79.901078, '', '0000-00-00 00:00:00', 0);
 
 -- --------------------------------------------------------
@@ -126,11 +140,18 @@ CREATE TABLE IF NOT EXISTS `subscription` (
 --
 
 INSERT INTO `subscription` (`cust_phone`, `shop_phone`, `start_time`, `last_query`) VALUES
-(94771122336, 94771122332, '2014-09-12 04:29:50', NULL),
-(94771122336, 94771122411, '2014-09-12 08:46:39', NULL),
-(94771122336, 94771142336, '2014-09-13 12:00:03', NULL),
+(94771122336, 94771122336, '2014-09-14 02:40:41', '2014-09-14 19:43:33'),
 (94771122420, 94771122411, '2014-09-13 08:17:16', NULL),
 (94771122420, 94771142336, '2014-09-13 08:18:54', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `named_subscription`
+--
+DROP TABLE IF EXISTS `named_subscription`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `named_subscription` AS (select `customer`.`name` AS `cust_name`,`shop`.`name` AS `shop_name`,`subscription`.`cust_phone` AS `cust_phone`,`subscription`.`shop_phone` AS `shop_phone`,`subscription`.`start_time` AS `start_time`,`subscription`.`last_query` AS `last_query` from ((`subscription` join `customer` on((`subscription`.`cust_phone` = `customer`.`phone`))) join `shop` on((`subscription`.`shop_phone` = `shop`.`phone`))));
 
 --
 -- Constraints for dumped tables
