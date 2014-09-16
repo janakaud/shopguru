@@ -47,7 +47,7 @@ class Shop(BaseEntity):
     
     def delete(self):
         """ delete current Customer entity data from storage """
-        entity_manager.delete_customer(self)
+        entity_manager.delete_shop(self)
     
     def check_status_expiry(self):
         """ check if Shop status expired, and notify the owner """

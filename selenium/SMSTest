@@ -15,6 +15,18 @@
 <tr><td><a href="RegisterShop_JanakaPaints_Exists">RegisterShop_JanakaPaints_Exists</a></td></tr>
 <tr><td><a href="RegisterShop_MalithHardwareStores_NoCategory">RegisterShop_MalithHardwareStores_NoCategory</a></td></tr>
 <tr><td><a href="RegisterShop_MalithHardwareStores">RegisterShop_MalithHardwareStores</a></td></tr>
+<tr><td><a href="FindShop_Hardware_BeforeTrack">FindShop_Hardware_BeforeTrack</a></td></tr>
+<tr><td><a href="Track_JanakaBandara_MalithHardwareStores">Track_JanakaBandara_MalithHardwareStores</a></td></tr>
+<tr><td><a href="FindShop_Hardware_AfterTrack_JanakaBandara">FindShop_Hardware_AfterTrack_JanakaBandara</a></td></tr>
+<tr><td><a href="UpdateStatus_MalithHardwareStores">UpdateStatus_MalithHardwareStores</a></td></tr>
+<tr><td><a href="CheckStatus_JanakaBandara_MalithHardwareStores">CheckStatus_JanakaBandara_MalithHardwareStores</a></td></tr>
+<tr><td><a href="Untrack_JanakaBandara_MalithHardwareStores">Untrack_JanakaBandara_MalithHardwareStores</a></td></tr>
+<tr><td><a href="FindShop_Hardware_AfterUntrack_JanakaBandara">FindShop_Hardware_AfterUntrack_JanakaBandara</a></td></tr>
+<tr><td><a href="UnregisterShop_AmilaHardware">UnregisterShop_AmilaHardware</a></td></tr>
+<tr><td><a href="FindShop_Hardware_AfterUnregister_AmilaHardware">FindShop_Hardware_AfterUnregister_AmilaHardware</a></td></tr>
+<tr><td><a href="UnregisterCust_JanakaBandara">UnregisterCust_JanakaBandara</a></td></tr>
+<tr><td><a href="FindShop_Hardware_AfterUnregister_JanakaBandara">FindShop_Hardware_AfterUnregister_JanakaBandara</a></td></tr>
+<tr><td><a href="UpdateStatus_AmilaHardware_AfterUnregister">UpdateStatus_AmilaHardware_AfterUnregister</a></td></tr>
 <tr><td><a href="Postconditions">Postconditions</a></td></tr>
 </tbody></table>
 </body>

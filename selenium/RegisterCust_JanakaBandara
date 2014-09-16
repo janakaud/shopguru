@@ -22,11 +22,6 @@
 	<td>REG CUST N:Janaka Bandara</td>
 </tr>
 <tr>
-	<td>sendSMS</td>
-	<td>94771122336</td>
-	<td>REG CUST N:Janaka Bandara</td>
-</tr>
-<tr>
 	<td>assertText</td>
 	<td>//div[@id='ROOT-2521314']/div/div[2]/div/div/div/div/div[2]/div/div/div[2]/div/div/div[2]/div/div/div/div/div/div/div/div/div/div/div/div[2]/div/div/div/div/div/div/div/div/div/div/div[2]/div/div/div/div/div/div</td>
 	<td>Welcome to ShopGuru, Janaka Bandara!</td>

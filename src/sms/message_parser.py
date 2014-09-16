@@ -325,6 +325,7 @@ def parse_update_status(message, status):
         return Query(query.UPDATE_STATUS,
                       dict(
                            status = status,
+                           update_time = message.time,
                            phone = message.phone
                            )
                       )

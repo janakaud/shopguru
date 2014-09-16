@@ -321,6 +321,7 @@ class ClientHandler(Thread):
             reply = MSG_SHOP_NOT_REGISTERED
         else:   # update status, and confirm
             shop_o.status = status
+            shop_o.last_update = self.query.params['update_time']
             shop_o.changes = shop.STATUS_CHANGED
             
             try:
