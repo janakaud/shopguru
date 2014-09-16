@@ -4,32 +4,22 @@
 <head profile="http://selenium-ide.openqa.org/profiles/test-case">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="selenium.base" href="http://localhost:10001/" />
-<title>RegisterCust</title>
+<title>Register Shop Amila Hardware</title>
 </head>
 <body>
 <table cellpadding="1" cellspacing="1" border="1">
 <thead>
-<tr><td rowspan="1" colspan="3">RegisterCust</td></tr>
+<tr><td rowspan="1" colspan="3">Register Shop Amila Hardware</td></tr>
 </thead><tbody>
 <tr>
-	<td>type</td>
-	<td>//div[6]/div/div/div/div[2]/div/input</td>
+	<td>setLBSLocation</td>
+	<td>6</td>
+	<td>80</td>
+</tr>
+<tr>
+	<td>sendSMS</td>
 	<td>94771122335</td>
-</tr>
-<tr>
-	<td>type</td>
-	<td>css=textarea.v-textarea</td>
 	<td>REG SHOP N:Amila Hardware A:Molpe Road, Moratuwa C:Hardware</td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>css=span.v-button-caption</td>
-	<td></td>
-</tr>
-<tr>
-	<td>pause</td>
-	<td>10000</td>
-	<td></td>
 </tr>
 <tr>
 	<td>assertText</td>

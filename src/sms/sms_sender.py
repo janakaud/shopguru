@@ -40,18 +40,3 @@ def send(message):
         logging.error('Message delivery failed with error ' + str(e.code))
     except URLError as e:
         logging.error('Message delivery failed with error ' + e.reason)
-
-#     result = urlfetch.fetch(url=app_config.SMS_TARGET,
-#                             payload=form_data,
-#                             method=urlfetch.POST,
-#                             headers = {
-#                                 'Content-Type': 'application/json',
-#                                 'Accept':'application/json'
-#                             }
-#                             )
-#     
-#     # acknowledge result
-#     if result.status_code == 200:
-#         logging.info('Message delivered successfully')
-#     else:
-#         logging.info('Message delivery failed with error ' + result.status_code)
