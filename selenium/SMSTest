@@ -3,17 +3,18 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
   <meta content="text/html; charset=UTF-8" http-equiv="content-type" />
-  <title>Test Suite</title>
+  <title>ShopGuru SMS Test Suite</title>
 </head>
 <body>
 <table id="suiteTable" cellpadding="1" cellspacing="1" border="1" class="selenium"><tbody>
-<tr><td><b>Test Suite</b></td></tr>
+<tr><td><b>ShopGuru SMS Test Suite</b></td></tr>
 <tr><td><a href="Preconditions">Preconditions</a></td></tr>
-<tr><td><a href="RegisterCustJanaka">RegisterCustJanaka</a></td></tr>
-<tr><td><a href="RegisterShopExists">RegisterCustExists</a></td></tr>
-<tr><td><a href="RegisterShopNoCategory">RegisterShopNoCategory</a></td></tr>
-<tr><td><a href="RegisterShopAmila">RegisterShopAmila</a></td></tr>
-<tr><td><a href="RegisterCustExists">RegisterShopExists</a></td></tr>
+<tr><td><a href="RegisterCust_JanakaBandara">RegisterCust_JanakaBandara</a></td></tr>
+<tr><td><a href="RegisterCust_SamanPerera_Exists">RegisterCust_SamanPerera_Exists</a></td></tr>
+<tr><td><a href="RegisterShop_AmilaHardware">RegisterShop_AmilaHardware</a></td></tr>
+<tr><td><a href="RegisterShop_JanakaPaints_Exists">RegisterShop_JanakaPaints_Exists</a></td></tr>
+<tr><td><a href="RegisterShop_MalithHardwareStores_NoCategory">RegisterShop_MalithHardwareStores_NoCategory</a></td></tr>
+<tr><td><a href="RegisterShop_MalithHardwareStores">RegisterShop_MalithHardwareStores</a></td></tr>
 <tr><td><a href="Postconditions">Postconditions</a></td></tr>
 </tbody></table>
 </body>
